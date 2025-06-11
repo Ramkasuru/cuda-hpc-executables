@@ -1,4 +1,4 @@
-# Cuda-hpc-learning
+# CUDA-HPC-Learning
 # **My CUDA Learning Repo with H100 Cluster Code**
 
 ---
