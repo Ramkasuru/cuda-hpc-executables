@@ -128,7 +128,7 @@ This provides a baseline: as expected, the CPU code is much slower than the GPU 
 
 ### **Conceptual Mind Maps**
 
-To deepen my understanding, I sketched mind-map style diagrams showing GPU execution flow.  
+To deepen my understanding, I used mind-map style diagrams showing GPU execution flow.  
 For instance, the reduction tree below (green nodes performing a max operation) conceptually matches my sum reduction: values are combined pairwise at each level, halving the active elements.  
 My GPU block-reduction follows the same pattern.  
 (In the final README I will include such diagrams to illustrate each kernel's thread-cooperation.)
