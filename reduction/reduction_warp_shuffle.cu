@@ -2,49 +2,32 @@
 #include <cuda_runtime.h>
 
 #define N 1024
+#define BLOCK_SIZE 256
 
-// Warp-level reduction using shuffle down intrinsics
-__inline__ __device__
-float warpReduceSum(float val) {
-    for (int offset = warpSize / 2; offset > 0; offset /= 2) {
-        val += __shfl_down_sync(0xFFFFFFFF, val, offset);
-    }
-    return val;
-}
+__global__ void reduce_tree(const float* input, float* result, int n) {
+    __shared__ float shared[BLOCK_SIZE]; // FIXED
+    int tid = threadIdx.x;
+    int idx = blockIdx.x * blockDim.x + tid;
 
-__global__ void reduce_warp_shuffle(const float *input, float *result, int n) {
-    float sum = 0.0f;
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    int lane = threadIdx.x % warpSize;
-    int warpId = threadIdx.x / warpSize;
-
-    if (idx < n) {
-        sum = input[idx];
-    }
-
-    // Reduce within warp
-    sum = warpReduceSum(sum);
-
-    // Shared memory for warp sums
-    __shared__ float warpSums[32]; // Max 32 warps per block
-
-    if (lane == 0) {
-        warpSums[warpId] = sum;
-    }
+    // Load data into shared memory
+    shared[tid] = (idx < n) ? input[idx] : 0.0f;
     __syncthreads();
 
-    // First warp reduces the warp sums
-    if (warpId == 0) {
-        sum = (lane < blockDim.x / warpSize) ? warpSums[lane] : 0.0f;
-        sum = warpReduceSum(sum);
-        if (lane == 0) atomicAdd(result, sum);
+    // Perform reduction in a tree-like manner
+    for (int s = blockDim.x / 2; s > 0; s >>= 1) {
+        if (tid < s) {
+            shared[tid] += shared[tid + s];
+        }
+        __syncthreads();
     }
+
+    // Write the result for this block to global memory
+    if (tid == 0) atomicAdd(result, shared[0]);
 }
 
-// Error checking wrapper
-void checkCudaError(cudaError_t err, const char *msg) {
+void checkCudaError(cudaError_t err, const char* msg) {
     if (err != cudaSuccess) {
-        std::cerr << "CUDA Error at " << msg << " - " << cudaGetErrorString(err) << std::endl;
+        std::cerr << "CUDA Error: " << msg << " - " << cudaGetErrorString(err) << std::endl;
         exit(EXIT_FAILURE);
     }
 }
@@ -52,31 +35,31 @@ void checkCudaError(cudaError_t err, const char *msg) {
 int main() {
     size_t size = N * sizeof(float);
     float* h_input = new float[N];
-    float h_result = 0.0f;
+    float* h_result = new float(0.0f);
 
-    for (int i = 0; i < N; i++) {
+    for (int i = 0; i < N; i++) { // FIXED
         h_input[i] = 1.0f;
     }
 
     float *d_input, *d_result;
-    checkCudaError(cudaMalloc(&d_input, size), "cudaMalloc d_input");
-    checkCudaError(cudaMalloc(&d_result, sizeof(float)), "cudaMalloc d_result");
+    checkCudaError(cudaMalloc((void**)&d_input, size), "Allocating device input");
+    checkCudaError(cudaMalloc((void**)&d_result, sizeof(float)), "Allocating device result");
 
-    checkCudaError(cudaMemcpy(d_input, h_input, size, cudaMemcpyHostToDevice), "cudaMemcpy input");
-    checkCudaError(cudaMemset(d_result, 0, sizeof(float)), "cudaMemset d_result");
+    checkCudaError(cudaMemcpy(d_input, h_input, size, cudaMemcpyHostToDevice), "Copying input to device");
+    checkCudaError(cudaMemset(d_result, 0, sizeof(float)), "Initializing device result");
 
-    int blockSize = 256;
-    int numBlocks = (N + blockSize - 1) / blockSize;
+    int numBlocks = (N + BLOCK_SIZE - 1) / BLOCK_SIZE;
+    reduce_tree<<<numBlocks, BLOCK_SIZE>>>(d_input, d_result, N);
+    checkCudaError(cudaGetLastError(), "Kernel launch failed");
 
-    reduce_warp_shuffle<<<numBlocks, blockSize>>>(d_input, d_result, N);
-    checkCudaError(cudaGetLastError(), "Kernel launch");
-    checkCudaError(cudaDeviceSynchronize(), "Device sync");
+    checkCudaError(cudaDeviceSynchronize(), "Synchronizing device"); // FIXED
 
-    checkCudaError(cudaMemcpy(&h_result, d_result, sizeof(float), cudaMemcpyDeviceToHost), "Memcpy result");
+    checkCudaError(cudaMemcpy(h_result, d_result, sizeof(float), cudaMemcpyDeviceToHost), "Copying result to host");
 
-    std::cout << "Result from warp shuffle reduction: " << h_result << std::endl;
+    std::cout << "Result from tree-based reduction: " << *h_result << std::endl;
 
     delete[] h_input;
+    delete h_result;
     cudaFree(d_input);
     cudaFree(d_result);
 

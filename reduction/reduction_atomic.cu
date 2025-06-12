@@ -1,11 +1,11 @@
 #include <iostream>
 #include <cuda_runtime.h>
-#define N 1024
+#include <cstdlib>  // for atoi
 
-__global__ void reduce_atomic(const float* input, float* result) {
+__global__ void reduce_atomic(const float* input, float* result, int N) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     if (i < N) {
-        atomicAdd(result, input[i]);    
+        atomicAdd(result, input[i]);
     }
 }
 
@@ -13,37 +13,52 @@ void check_cuda_error(cudaError_t err) {
     if (err != cudaSuccess) {
         std::cerr << "CUDA error: " << cudaGetErrorString(err) << std::endl;
         exit(EXIT_FAILURE);
-    } 
+    }
 }
 
-int main() {
-    size_t size = N * sizeof(float);
-    float *h_input = new float[N];
-
-    for (int i = 0; i < N; i++) {
-        h_input[i] = 1.0f; // Initialize input array with 1.0
+int main(int argc, char* argv[]) {
+    if (argc < 3) {
+        std::cerr << "Usage: " << argv[0] << " <array_size> <block_size>" << std::endl;
+        return 1;
     }
 
-    // Allocating memory on the device
-    float *d_input, *d_result;
+    int N = std::atoi(argv[1]);
+    int blockSize = std::atoi(argv[2]);
+
+    if (N <= 0 || blockSize <= 0) {
+        std::cerr << "Error: array_size and block_size must be positive integers." << std::endl;
+        return 1;
+    }
+
+    size_t size = N * sizeof(float);
+    float* h_input = new float[N];
+
+    // Initialize input array with 1.0f for testing
+    for (int i = 0; i < N; i++) {
+        h_input[i] = 1.0f;
+    }
+
+    // Allocate device memory
+    float* d_input;
+    float* d_result;
+
     check_cuda_error(cudaMalloc(&d_input, size));
     check_cuda_error(cudaMalloc(&d_result, sizeof(float)));
 
-    // Initialize result to zero on the device
+    // Initialize result to zero on device
     float h_result = 0.0f;
-
-    // Copy data to device
     check_cuda_error(cudaMemcpy(d_input, h_input, size, cudaMemcpyHostToDevice));
     check_cuda_error(cudaMemcpy(d_result, &h_result, sizeof(float), cudaMemcpyHostToDevice));
 
-    // Kernel launch
-    int blockSize = 256;
+    // Calculate number of blocks needed
     int numBlocks = (N + blockSize - 1) / blockSize;
-    reduce_atomic<<<numBlocks, blockSize>>>(d_input, d_result);
+
+    // Launch kernel
+    reduce_atomic<<<numBlocks, blockSize>>>(d_input, d_result, N);
     check_cuda_error(cudaGetLastError());
     check_cuda_error(cudaDeviceSynchronize());
 
-    // Copy result back
+    // Copy result back to host
     check_cuda_error(cudaMemcpy(&h_result, d_result, sizeof(float), cudaMemcpyDeviceToHost));
 
     std::cout << "Result from atomic reduction: " << h_result << std::endl;
