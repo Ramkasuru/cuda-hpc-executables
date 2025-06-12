@@ -180,7 +180,8 @@ This matches prior reports: shuffle-based reduction yields high bandwidth becaus
 - Created visual explanations (diagrams and mind maps)  
 - Collected timing data  
 - Wrote this README  
-- Reviewed SAFARI ETH Zurich materials on GPU reduction patterns  
+- Reviewed SAFARI ETH Zurich materials on GPU reduction patterns
+- Added Makefile to build CUDA reduction kernels (06.11.25)
 
 ### 📝 To Do:
 - Finalize the README with all figures and citations  
