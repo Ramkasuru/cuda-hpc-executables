@@ -38,7 +38,6 @@ int main(int argc, char* argv[]) {
         h_input[i] = 1.0f;
     }
 
-    // Allocate device memory
     float* d_input;
     float* d_result;
 
