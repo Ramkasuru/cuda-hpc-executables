@@ -1,0 +1,1 @@
+N = 1000000, Threads/Block = 256, Sum: 1000000, Kernel time (ms): 8.883104
