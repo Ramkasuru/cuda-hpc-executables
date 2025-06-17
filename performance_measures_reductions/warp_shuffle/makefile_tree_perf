@@ -1,8 +1,0 @@
-TARGET = reduction_tree_perf
-SRC = reduction_tree_perf.cu
-
-all:
-	nvcc -O3 -o $(TARGET) $(SRC)
-
-clean:
-	rm -f $(TARGET)
