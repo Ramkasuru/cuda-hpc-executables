@@ -1,0 +1,8 @@
+TARGET = reduction_atomic_args
+SRC = reduction_atomic_args.cu
+
+all:
+	nvcc -O3 -o $(TARGET) $(SRC)
+
+clean:
+	rm -f $(TARGET)
