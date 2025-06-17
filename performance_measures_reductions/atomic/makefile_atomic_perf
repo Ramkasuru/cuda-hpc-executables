@@ -1,0 +1,9 @@
+TARGET = reduction_atomic_perf
+SRC = reduction_atomic_perf.cu
+
+all:
+	nvcc -O3 -o $(TARGET) $(SRC)
+
+clean:
+	rm -f $(TARGET)
+
