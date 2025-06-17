@@ -1,8 +1,0 @@
-TARGET = reduction_cpu_perf
-SRC = reduction_cpu_perf.cpp
-
-all:
-	g++ -O3 -o $(TARGET) $(SRC)
-
-clean:
-	rm -f $(TARGET)
