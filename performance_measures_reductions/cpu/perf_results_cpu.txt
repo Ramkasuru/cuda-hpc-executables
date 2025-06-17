@@ -1,0 +1,11 @@
+N = 1000000, Sum: 1000000, CPU time (ms): 0.204137
+
+CPU info:
+Model name:           INTEL(R) XEON(R) PLATINUM 8562Y+
+Architecture:         x86_64
+CPU(s):               64 (2 sockets, 32 cores/socket, 1 thread/core)
+L1d:                  3 MiB (64 instances)
+L1i:                  2 MiB (64 instances)
+L2:                   128 MiB (64 instances)
+L3:                   120 MiB (2 instances)
+NUMA nodes:           4
