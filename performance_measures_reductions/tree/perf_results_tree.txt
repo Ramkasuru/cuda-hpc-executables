@@ -1,1 +1,16 @@
+GPU Information (L40S):
+
+GPU Model:          NVIDIA L40S
+Driver Version:     550.127.05
+CUDA Version:       12.4
+GPU Memory:         46,068 MiB (≈46 GB)
+Power Limit:        350W
+Temperature:        25°C (idle)
+SMs/CUDA Cores:     [see deviceQuery output or NVIDIA product page]
+PCIe Bus ID:        00000000:E1:00.0
+
+[All reduction performance measurements are run on the above GPU.]
+
+
+
 N = 1000000, Threads/Block = 256, Sum: 1000000, Kernel time (ms): 8.883104
