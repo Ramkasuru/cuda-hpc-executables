@@ -1,0 +1,8 @@
+TARGET = reduction_warp_shuffle_perf
+SRC = reduction_warp_shuffle_perf.cu
+
+all:
+	nvcc -O3 -o $(TARGET) $(SRC)
+
+clean:
+	rm -f $(TARGET)
